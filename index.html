@@ -1,0 +1,256 @@
+<!DOCTYPE html>
+<html lang="ru">
+<head>
+  <link rel="preconnect" href="https://www.gstatic.com" crossorigin>
+  <link rel="preconnect" href="https://ibd2026-31a00-default-rtdb.firebaseio.com" crossorigin>
+  <link rel="preconnect" href="https://cdnjs.cloudflare.com" crossorigin>
+  <link rel="preconnect" href="https://images.unsplash.com" crossorigin>
+  <link rel="dns-prefetch" href="https://www.gstatic.com">
+  <link rel="dns-prefetch" href="https://images.unsplash.com">
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=yes">
+  <meta http-equiv="Cache-Control" content="no-cache, no-store, must-revalidate">
+  <meta http-equiv="Pragma" content="no-cache">
+  <meta http-equiv="Expires" content="0">
+  <title>Б-31ЛЕС</title>
+  <script>
+  (function(){
+    try {
+      var t = localStorage.getItem('b21-theme') || 'dark-gold';
+      document.documentElement.setAttribute('data-theme', t);
+    } catch(e){}
+  })();
+  </script>
+  <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0/css/all.min.css">
+  <link rel="stylesheet" href="styles.css?v=3">
+  <link rel="icon" href="data/icon.ico?v=3">
+  <script src="logo-fx.js?v=3"></script>
+  <script src="page-animations.js?v=3"></script>
+  <script src="card-tilt.js?v=3"></script>
+  <script src="drag-sort.js?v=3"></script>
+  <script type="module" src="firebase-config.js?v=3"></script>
+  <script type="module" src="dataManager.js?v=3"></script>
+  <script type="module" src="rich-editor.js?v=3"></script>
+  <script type="module" src="theme.js?v=3"></script>
+</head>
+<body>
+<div class="app-grid">
+  <header class="site-header">
+    <div class="logo"><h1><i class="fas fa-compass"></i> Б-31ЛЕС</h1></div>
+    <ul class="nav-links">
+      <li><a href="#/home" data-route="home"><i class="fas fa-home"></i> Главная</a></li>
+      <li><a href="#/schedule" data-route="schedule"><i class="fas fa-calendar-alt"></i> Расписание</a></li>
+      <li><a href="#/exam" data-route="exam"><i class="fas fa-graduation-cap"></i> Экзамены</a></li>
+      <li><a href="#/resources" data-route="resources"><i class="fas fa-folder-open"></i> Ресурсы</a></li>
+      <li><a href="#/homework" data-route="homework"><i class="fas fa-tasks"></i> Домашка</a></li>
+      <li><a href="#/extracurricular" data-route="extracurricular"><i class="fas fa-calendar-plus"></i> Внеурочка</a></li>
+      <li><a href="#/teacher" data-route="teacher"><i class="fas fa-chalkboard-teacher"></i> Преподаватели</a></li>
+    </ul>
+  </header>
+
+  <aside class="sidebar">
+    <div id="sidebarDynamic"></div>
+    <div id="settingsContainer">
+      <button class="nav-btn" id="settingsThemeBtn"><i class="fas fa-palette"></i> Тема оформления</button>
+      <button class="nav-btn" id="settingsExportBtn"><i class="fas fa-file-export"></i> Экспорт данных</button>
+      <button class="nav-btn" id="settingsImportBtn"><i class="fas fa-file-import"></i> Импорт данных</button>
+      <input type="file" id="settingsImportInput" accept=".json" style="display:none">
+    </div>
+  </aside>
+
+  <main class="main-content" id="mainContent"></main>
+
+  <footer class="site-footer">
+    <p>© 2026 Б-31ЛЕС · Единый портал группы</p>
+  </footer>
+</div>
+
+<!-- ========== МОДАЛКИ ========== -->
+
+<!-- Home: настройка даты таймера -->
+<div id="homeDateModal" class="modal">
+  <div class="modal-content" style="max-width:400px;">
+    <span class="close-modal" data-close="homeDateModal">&times;</span>
+    <h3 id="homeDateModalTitle"><i class="fas fa-calendar-alt"></i> Установить дату</h3>
+    <label for="homeDatePicker">Выберите дату и время:</label>
+    <input type="datetime-local" id="homeDatePicker" style="width:100%; margin-top:8px;">
+    <div class="modal-buttons" style="margin-top:20px;">
+      <button id="homeDateSaveBtn" class="save-btn">Сохранить</button>
+      <button id="homeDateCancelBtn" class="cancel-btn">Отмена</button>
+    </div>
+  </div>
+</div>
+
+<!-- Schedule: редактирование пары -->
+<div id="scheduleEditModal" class="modal">
+  <div class="modal-content">
+    <span class="close-modal" data-close="scheduleEditModal">&times;</span>
+    <h3><i class="fas fa-edit"></i> Редактировать пару</h3>
+    <form id="scheduleEditForm">
+      <label>Предмет:</label>
+      <input type="text" id="scheduleEditSubject" placeholder="Название предмета">
+      <label>Аудитория:</label>
+      <input type="text" id="scheduleEditRoom" placeholder="Номер аудитории">
+      <label>Дата начала (ДД.ММ.ГГГГ) – опционально:</label>
+      <input type="text" id="scheduleEditStartDate" placeholder="01.09.2025">
+      <label>Дата окончания (ДД.ММ.ГГГГ) – опционально:</label>
+      <input type="text" id="scheduleEditEndDate" placeholder="31.05.2026">
+      <label>Тип занятия:</label>
+      <div style="display:flex; gap:12px; margin-top:6px; flex-wrap:wrap;">
+        <button type="button" id="scheduleTypeLecture" class="type-toggle" data-type="lecture"><i class="fas fa-chalkboard-teacher"></i> Лекция</button>
+        <button type="button" id="scheduleTypePractice" class="type-toggle" data-type="practice"><i class="fas fa-tools"></i> Практика</button>
+        <button type="button" id="scheduleTypeNone" class="type-toggle active" data-type=""><i class="fas fa-ban"></i> Не указано</button>
+      </div>
+      <label>Заметки (опционально):</label>
+      <div id="scheduleEditNotesEditor"></div>
+      <div class="modal-buttons">
+        <button type="submit" class="save-btn"><i class="fas fa-save"></i> Сохранить</button>
+        <button type="button" class="cancel-btn" data-close="scheduleEditModal">Отмена</button>
+      </div>
+    </form>
+  </div>
+</div>
+
+<!-- Exam -->
+<div id="examModal" class="modal">
+  <div class="modal-content">
+    <span class="close-modal" data-close="examModal">&times;</span>
+    <h3 id="examModalTitle"><i class="fas fa-edit"></i> Экзамен</h3>
+    <form id="examForm">
+      <label>Название предмета</label><input type="text" id="examSubject" required>
+      <label>Дата и время</label><input type="text" id="examDate" placeholder="17 июня 2025, 10:00" required>
+      <label>Аудитория</label><input type="text" id="examRoom" placeholder="202 (лесной факультет)" required>
+      <label>Преподаватель</label><input type="text" id="examTeacher" placeholder="доцент Сидорова Е.В." required>
+      <label>Формат</label><input type="text" id="examFormat" placeholder="устный билет + практика" required>
+      <label>Ресурсы (ссылки, разделённые запятой)</label>
+      <input type="text" id="examResources" placeholder="Билеты, Wiki, Видео">
+      <label>Ссылка на методичку (URL)</label>
+      <input type="text" id="examMethod" placeholder="https://...">
+      <label>Заметки (опционально):</label>
+      <div id="examNotesEditor"></div>
+      <div class="modal-buttons">
+        <button type="submit" class="save-btn"><i class="fas fa-save"></i> Сохранить</button>
+        <button type="button" class="cancel-btn" data-close="examModal">Отмена</button>
+      </div>
+    </form>
+  </div>
+</div>
+
+<!-- Resource -->
+<div id="resourceModal" class="modal">
+  <div class="modal-content">
+    <span class="close-modal" data-close="resourceModal">&times;</span>
+    <h3 id="resourceModalTitle"><i class="fas fa-edit"></i> Ресурс</h3>
+    <form id="resourceForm">
+      <label>Название</label><input type="text" id="resourceTitle" required>
+      <label>Описание</label>
+      <div id="resourceDescEditor"></div>
+      <label>Категория</label>
+      <select id="resourceCategory" required>
+        <option value="study">Учебники</option>
+        <option value="video">Видео</option>
+        <option value="test">Конспекты</option>
+        <option value="soft">ПО</option>
+      </select>
+      <label>Иконка (выберите из предложенных или введите свой класс)</label>
+      <div class="icon-picker" id="iconPicker"></div>
+      <div style="display:flex; gap:10px; align-items:center; margin-top:8px;">
+        <input type="text" id="resourceIcon" placeholder="fa-book-open (свой класс)" style="flex:1;">
+        <button type="button" id="clearIconBtn" class="cancel-btn" style="padding:6px 12px;">Очистить</button>
+      </div>
+      <label>Мета-информация (например, PDF, 24 МБ)</label>
+      <input type="text" id="resourceMeta" placeholder="PDF, 24 МБ">
+      <label>Ссылка скачать</label>
+      <input type="text" id="resourceLink" placeholder="https://...">
+      <div class="modal-buttons">
+        <button type="submit" class="save-btn"><i class="fas fa-save"></i> Сохранить</button>
+        <button type="button" class="cancel-btn" data-close="resourceModal">Отмена</button>
+      </div>
+    </form>
+  </div>
+</div>
+
+<!-- Homework: предмет -->
+<div id="subjectModal" class="modal">
+  <div class="modal-content">
+    <span class="close-modal" data-close="subjectModal">&times;</span>
+    <h3 id="subjectModalTitle"><i class="fas fa-graduation-cap"></i> Новый предмет</h3>
+    <input type="text" id="subjectNameInput" placeholder="Название предмета" autocomplete="off">
+    <div class="modal-buttons">
+      <button id="saveSubjectBtn" type="button" class="save-btn">Сохранить</button>
+      <button id="cancelSubjectBtn" type="button" class="cancel-btn" data-close="subjectModal">Отмена</button>
+    </div>
+  </div>
+</div>
+
+<!-- Homework: задание -->
+<div id="taskModal" class="modal">
+  <div class="modal-content task-modal">
+    <span class="close-modal" data-close="taskModal">&times;</span>
+    <h3 id="taskModalTitle"><i class="fas fa-edit"></i> Задание</h3>
+    <label>Описание / текст задания</label>
+    <div id="taskDescEditor"></div>
+    <label>Ссылки на ресурсы или файлы</label>
+    <div id="linksContainer"></div>
+    <button type="button" id="addLinkBtn" class="add-link-btn"><i class="fas fa-plus"></i> Добавить ссылку</button>
+    <label>Дополнительные метки (опционально)</label>
+    <input type="text" id="taskTags" placeholder="Ключевые слова через запятую">
+    <div class="modal-buttons">
+      <button id="saveTaskBtn" type="button" class="save-btn">Сохранить задание</button>
+      <button id="cancelTaskBtn" type="button" class="cancel-btn" data-close="taskModal">Отмена</button>
+    </div>
+  </div>
+</div>
+
+<!-- Extracurricular: edit -->
+<div id="ecEditModal" class="modal">
+  <div class="modal-content">
+    <span class="close-modal" data-close="ecEditModal">&times;</span>
+    <h3 id="ecModalTitle"><i class="fas fa-plus"></i> Добавить</h3>
+    <div id="ecModalDynamicFields"></div>
+    <div class="modal-buttons">
+      <button id="ecSaveModalBtn" class="save-btn">Сохранить</button>
+      <button id="ecCancelModalBtn" class="cancel-btn" data-close="ecEditModal">Отмена</button>
+    </div>
+  </div>
+</div>
+
+<!-- Extracurricular: test -->
+<div id="ecTestModal" class="modal">
+  <div class="modal-content test-modal-content">
+    <span class="close-modal" data-close="ecTestModal">&times;</span>
+    <h3 id="ecTestModalTitle"><i class="fas fa-question-circle"></i> Прохождение теста</h3>
+    <div id="ecTestQuestionsContainer"></div>
+    <div class="modal-buttons">
+      <button id="ecSubmitTestBtn" class="save-btn">Отправить ответы</button>
+      <button id="ecCancelTestBtn" class="cancel-btn" data-close="ecTestModal">Закрыть</button>
+    </div>
+    <div id="ecTestResult" style="margin-top: 15px; font-weight: bold;"></div>
+  </div>
+</div>
+
+<!-- Teacher -->
+<div id="teacherModal" class="modal">
+  <div class="modal-content">
+    <span class="close-modal" data-close="teacherModal">&times;</span>
+    <h3 id="teacherModalTitle"><i class="fas fa-edit"></i> Преподаватель</h3>
+    <form id="teacherForm">
+      <label>ФИО</label><input type="text" id="teacherName" required>
+      <label>Кафедра / должность</label><input type="text" id="teacherPosition" required>
+      <label>Учёная степень</label><input type="text" id="teacherDegree" required>
+      <label>Предмет</label><input type="text" id="teacherDegree2" required>
+      <label>Телефон</label><input type="text" id="teacherPhone" required>
+      <label>Email</label><input type="email" id="teacherEmail" required>
+      <label>Ссылка на фото (URL)</label><input type="text" id="teacherPhoto" placeholder="data/Teachers/photo.jpg">
+      <div class="modal-buttons">
+        <button type="submit" class="save-btn"><i class="fas fa-save"></i> Сохранить</button>
+        <button type="button" class="cancel-btn" data-close="teacherModal">Отмена</button>
+      </div>
+    </form>
+  </div>
+</div>
+
+<script type="module" src="app-settings.js?v=3"></script>
+<script type="module" src="app.js?v=3"></script>
+</body>
+</html>
